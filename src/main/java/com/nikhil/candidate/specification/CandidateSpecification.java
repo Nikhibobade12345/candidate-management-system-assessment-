@@ -16,6 +16,15 @@ public class CandidateSpecification {
         // Private constructor to prevent instantiation of utility class
     }
 
+    private static String escapeWildcards(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\")
+                    .replace("%", "\\%")
+                    .replace("_", "\\_");
+    }
+
     public static Specification<Candidate> build(CandidateSearchCriteria criteria) {
         return (root, query, criteriaBuilder) -> {
             if (criteria == null) {
@@ -26,13 +35,14 @@ public class CandidateSpecification {
 
             // 1. Keyword search: matches firstName OR lastName OR email OR currentCompany
             if (criteria.getSearch() != null && !criteria.getSearch().trim().isEmpty()) {
-                String searchTerm = "%" + criteria.getSearch().trim().toLowerCase() + "%";
+                String escapedSearch = escapeWildcards(criteria.getSearch().trim().toLowerCase());
+                String searchTerm = "%" + escapedSearch + "%";
 
                 Predicate searchPredicate = criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), searchTerm),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), searchTerm),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchTerm),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("currentCompany")), searchTerm)
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), searchTerm, '\\'),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), searchTerm, '\\'),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), searchTerm, '\\'),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("currentCompany")), searchTerm, '\\')
                 );
                 predicates.add(searchPredicate);
             }
@@ -44,9 +54,10 @@ public class CandidateSpecification {
 
             // 3. Partial filter by Location (case-insensitive)
             if (criteria.getLocation() != null && !criteria.getLocation().trim().isEmpty()) {
-                String locationPattern = "%" + criteria.getLocation().trim().toLowerCase() + "%";
+                String escapedLocation = escapeWildcards(criteria.getLocation().trim().toLowerCase());
+                String locationPattern = "%" + escapedLocation + "%";
                 predicates.add(criteriaBuilder.like(
-                        criteriaBuilder.lower(root.get("location")), locationPattern));
+                        criteriaBuilder.lower(root.get("location")), locationPattern, '\\'));
             }
 
             // 4. Minimum Experience filter (experience >= minExperience)
