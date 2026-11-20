@@ -64,7 +64,7 @@ The application adopts a **3-tier Layered Architecture** with unidirectional dat
 | `first_name` | `VARCHAR(100)` | NOT NULL | Candidate's given name |
 | `last_name` | `VARCHAR(100)` | NOT NULL | Candidate's family name |
 | `email` | `VARCHAR(150)` | NOT NULL, UNIQUE | Deduplication and contact key |
-| `phone` | `VARCHAR(15)` | NULL | Contact phone number |
+| `phone` | `VARCHAR(25)` | NULL | Contact phone number |
 | `experience` | `DECIMAL(4,1)` | NULL | Years of experience (e.g., `5.5`) |
 | `location` | `VARCHAR(100)` | NULL | City or geographical region |
 | `current_company`| `VARCHAR(150)` | NULL | Current employer |

@@ -46,7 +46,7 @@ public class Candidate {
     @Email(message = "Please provide a valid email")
     private String email;
 
-    @Column(length = 15)
+    @Column(length = 25)
     private String phone;
 
     @Column(precision = 4, scale = 1)

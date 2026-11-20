@@ -71,6 +71,17 @@ public class CandidateController {
             throw new IllegalArgumentException("Page size must be between 1 and 100");
         }
 
+        // Validate filter ranges
+        if (criteria.getMinExperience() != null && criteria.getMaxExperience() != null
+                && criteria.getMinExperience().compareTo(criteria.getMaxExperience()) > 0) {
+            throw new IllegalArgumentException("minExperience cannot be greater than maxExperience");
+        }
+
+        if (criteria.getMinSalary() != null && criteria.getMaxSalary() != null
+                && criteria.getMinSalary().compareTo(criteria.getMaxSalary()) > 0) {
+            throw new IllegalArgumentException("minSalary cannot be greater than maxSalary");
+        }
+
         // Whitelist allowed sort fields to prevent SQL injection or bad property references
         if (!sortBy.equals("id")
                 && !sortBy.equals("firstName")
@@ -80,12 +91,18 @@ public class CandidateController {
                 && !sortBy.equals("status")
                 && !sortBy.equals("expectedSalary")
                 && !sortBy.equals("noticePeriod")
-                && !sortBy.equals("createdAt")) {
+                && !sortBy.equals("createdAt")
+                && !sortBy.equals("updatedAt")) {
 
             throw new IllegalArgumentException("Invalid sort field: " + sortBy);
         }
 
-        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+        Sort.Direction sortDirection;
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid sort direction: " + direction + ". Allowed values are 'asc' or 'desc'");
+        }
 
         Pageable pageable = PageRequest.of(
                 page,

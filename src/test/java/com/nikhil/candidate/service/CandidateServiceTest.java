@@ -193,4 +193,37 @@ class CandidateServiceTest {
 
         verify(candidateRepository, never()).delete(any(Candidate.class));
     }
+
+    @Test
+    @DisplayName("createCandidate: Trims whitespace and accepts formatted phone up to 20 chars")
+    void createCandidate_TrimsWhitespaceAndAcceptsFormattedPhone() {
+        when(candidateRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
+        when(candidateRepository.saveAndFlush(any(Candidate.class))).thenAnswer(invocation -> {
+            Candidate saved = invocation.getArgument(0);
+            saved.setId(2L);
+            return saved;
+        });
+
+        CandidateRequest req = new CandidateRequest();
+        req.setFirstName("  Alice  ");
+        req.setLastName("  Smith  ");
+        req.setEmail("  alice.smith@example.com  ");
+        req.setPhone("  +1 (555) 019-9999  ");
+        req.setExperience(new BigDecimal("3.5"));
+        req.setLocation("  Chicago  ");
+        req.setCurrentCompany("  Tech Solutions  ");
+        req.setExpectedSalary(new BigDecimal("90000.00"));
+        req.setNoticePeriod(15);
+        req.setStatus(CandidateStatus.AVAILABLE);
+
+        CandidateResponse res = candidateService.createCandidate(req);
+
+        assertNotNull(res);
+        assertEquals("Alice", res.getFirstName());
+        assertEquals("Smith", res.getLastName());
+        assertEquals("alice.smith@example.com", res.getEmail());
+        assertEquals("+1 (555) 019-9999", res.getPhone());
+        assertEquals("Chicago", res.getLocation());
+        assertEquals("Tech Solutions", res.getCurrentCompany());
+    }
 }

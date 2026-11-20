@@ -43,18 +43,16 @@ public class CandidateServiceImpl implements CandidateInterface {
 
         Candidate candidate = new Candidate();
 
-        candidate.setFirstName(request.getFirstName());
-        candidate.setLastName(request.getLastName());
+        candidate.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : null);
+        candidate.setLastName(request.getLastName() != null ? request.getLastName().trim() : null);
         candidate.setEmail(email);
-        candidate.setPhone(request.getPhone());
+        candidate.setPhone(trimOrNull(request.getPhone()));
         candidate.setExperience(request.getExperience());
-        candidate.setLocation(request.getLocation());
-        candidate.setCurrentCompany(request.getCurrentCompany());
+        candidate.setLocation(trimOrNull(request.getLocation()));
+        candidate.setCurrentCompany(trimOrNull(request.getCurrentCompany()));
         candidate.setExpectedSalary(request.getExpectedSalary());
         candidate.setNoticePeriod(request.getNoticePeriod());
         candidate.setStatus(request.getStatus());
-
-
 
         Candidate savedCandidate = candidateRepository.saveAndFlush(candidate);
 
@@ -102,13 +100,13 @@ public class CandidateServiceImpl implements CandidateInterface {
                     "Email already belongs to another candidate");
         }
 
-        candidate.setFirstName(request.getFirstName());
-        candidate.setLastName(request.getLastName());
+        candidate.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : null);
+        candidate.setLastName(request.getLastName() != null ? request.getLastName().trim() : null);
         candidate.setEmail(email);
-        candidate.setPhone(request.getPhone());
+        candidate.setPhone(trimOrNull(request.getPhone()));
         candidate.setExperience(request.getExperience());
-        candidate.setLocation(request.getLocation());
-        candidate.setCurrentCompany(request.getCurrentCompany());
+        candidate.setLocation(trimOrNull(request.getLocation()));
+        candidate.setCurrentCompany(trimOrNull(request.getCurrentCompany()));
         candidate.setExpectedSalary(request.getExpectedSalary());
         candidate.setNoticePeriod(request.getNoticePeriod());
         candidate.setStatus(request.getStatus());
@@ -127,6 +125,14 @@ public class CandidateServiceImpl implements CandidateInterface {
                         "Candidate not found with ID: " + id));
 
         candidateRepository.delete(candidate);
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     // Entity to Response DTO Mapping

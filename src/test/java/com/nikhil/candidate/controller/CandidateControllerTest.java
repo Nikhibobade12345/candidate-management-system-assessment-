@@ -174,4 +174,62 @@ class CandidateControllerTest {
 
         verify(candidateInterface, times(1)).deleteCandidate(1L);
     }
+
+    @Test
+    @DisplayName("POST /api/candidates: Invalid phone format returns 400 Bad Request")
+    void createCandidate_InvalidPhone_Returns400() throws Exception {
+        CandidateRequest request = createValidRequest();
+        request.setPhone("invalid-phone-abc");
+
+        mockMvc.perform(post("/api/candidates")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.validationErrors.phone").value("Please provide a valid phone number"));
+    }
+
+    @Test
+    @DisplayName("GET /api/candidates: Whitelisted sort by updatedAt returns 200 OK")
+    void getAllCandidates_SortByUpdatedAt_Returns200() throws Exception {
+        Page<CandidateResponse> page = new PageImpl<>(List.of(createResponse()), PageRequest.of(0, 10), 1);
+        when(candidateInterface.getAllCandidates(any(), any())).thenReturn(page);
+
+        mockMvc.perform(get("/api/candidates")
+                        .param("sortBy", "updatedAt")
+                        .param("direction", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].firstName").value("Alice"));
+    }
+
+    @Test
+    @DisplayName("GET /api/candidates: Inverted experience range returns 400 Bad Request")
+    void getAllCandidates_InvertedExperienceRange_Returns400() throws Exception {
+        mockMvc.perform(get("/api/candidates")
+                        .param("minExperience", "10.0")
+                        .param("maxExperience", "2.0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("minExperience cannot be greater than maxExperience"));
+    }
+
+    @Test
+    @DisplayName("GET /api/candidates: Inverted salary range returns 400 Bad Request")
+    void getAllCandidates_InvertedSalaryRange_Returns400() throws Exception {
+        mockMvc.perform(get("/api/candidates")
+                        .param("minSalary", "150000.00")
+                        .param("maxSalary", "50000.00"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("minSalary cannot be greater than maxSalary"));
+    }
+
+    @Test
+    @DisplayName("GET /api/candidates: Invalid sort direction returns 400 Bad Request")
+    void getAllCandidates_InvalidDirection_Returns400() throws Exception {
+        mockMvc.perform(get("/api/candidates")
+                        .param("direction", "sideways"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
 }
