@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidate Management System | Recruit CRM</title>
+  <!-- Tailwind CSS via CDN for modern styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .badge-AVAILABLE { background-color: #DEF7EC; color: #03543F; border: 1px solid #BCF0DA; }
+    .badge-IN_PROGRESS { background-color: #E1EFFE; color: #1E429F; border: 1px solid #B4C6FC; }
+    .badge-HIRED { background-color: #EDEBFE; color: #5521B5; border: 1px solid #DCD7FE; }
+    .badge-ON_HOLD { background-color: #FEF08A; color: #854D0E; border: 1px solid #FDE047; }
+    .badge-REJECTED { background-color: #FDE8E8; color: #9B1C1C; border: 1px solid #F8B4B4; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Recruit CRM</span>
+            <span class="text-xs ml-2 px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-full border border-blue-200">Candidate Hub</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="refreshBtn" onclick="fetchCandidates()" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Refresh Data">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </button>
+          <button onclick="openCreateModal()" class="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm shadow-blue-500/25 transition">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Add Candidate</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- SEARCH & MULTI-CRITERIA FILTER PANEL -->
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2 text-slate-800 font-semibold text-base">
+          <i data-lucide="filter" class="w-4 h-4 text-blue-600"></i>
+          <span>Search & Advanced Filters</span>
+        </div>
+        <button onclick="resetFilters()" class="text-xs text-slate-500 hover:text-blue-600 font-medium flex items-center space-x-1">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Reset All</span>
+        </button>
+      </div>
+
+      <!-- Filter Controls Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Search Keyword -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Keyword Search</label>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="filterSearch" placeholder="Name, Email, Company..." class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status</label>
+          <select id="filterStatus" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Statuses</option>
+            <option value="AVAILABLE">AVAILABLE</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="HIRED">HIRED</option>
+            <option value="ON_HOLD">ON_HOLD</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Location</label>
+          <input type="text" id="filterLocation" placeholder="e.g. Bangalore, Pune" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Max Notice Period -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Max Notice (Days)</label>
+          <input type="number" id="filterNotice" placeholder="e.g. 30" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Min & Max Experience -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Min Experience (Yrs)</label>
+          <input type="number" step="0.5" id="filterMinExp" placeholder="e.g. 2.0" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Max Experience (Yrs)</label>
+          <input type="number" step="0.5" id="filterMaxExp" placeholder="e.g. 8.0" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Min & Max Salary -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Min Expected Salary</label>
+          <input type="number" id="filterMinSalary" placeholder="e.g. 500000" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Max Expected Salary</label>
+          <input type="number" id="filterMaxSalary" placeholder="e.g. 2000000" class="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="applyFilters()" class="inline-flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-5 py-2 rounded-lg shadow transition">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          <span>Apply Filters</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- DATA TABLE SECTION -->
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+      <!-- Table Header & Summary -->
+      <div class="px-5 py-3.5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+        <div class="text-sm font-medium text-slate-600">
+          Showing <span id="candidateCount" class="font-bold text-slate-900">0</span> candidates
+        </div>
+        <div class="flex items-center space-x-4 text-xs text-slate-500">
+          <div class="flex items-center space-x-1.5">
+            <span>Rows per page:</span>
+            <select id="pageSize" onchange="changePageSize()" class="border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-700">
+          <thead class="bg-slate-100/70 text-xs font-semibold text-slate-600 uppercase border-b border-slate-200 select-none">
+            <tr>
+              <th onclick="toggleSort('id')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>ID</span><span id="sort-id" class="text-slate-400">↕</span></div>
+              </th>
+              <th onclick="toggleSort('firstName')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Name</span><span id="sort-firstName" class="text-slate-400">↕</span></div>
+              </th>
+              <th class="px-4 py-3">Contact</th>
+              <th onclick="toggleSort('experience')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Exp (Yrs)</span><span id="sort-experience" class="text-slate-400">↕</span></div>
+              </th>
+              <th onclick="toggleSort('location')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Location</span><span id="sort-location" class="text-slate-400">↕</span></div>
+              </th>
+              <th class="px-4 py-3">Current Company</th>
+              <th onclick="toggleSort('expectedSalary')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Salary</span><span id="sort-expectedSalary" class="text-slate-400">↕</span></div>
+              </th>
+              <th onclick="toggleSort('noticePeriod')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Notice</span><span id="sort-noticePeriod" class="text-slate-400">↕</span></div>
+              </th>
+              <th onclick="toggleSort('status')" class="px-4 py-3 cursor-pointer hover:bg-slate-200/60 transition">
+                <div class="flex items-center space-x-1"><span>Status</span><span id="sort-status" class="text-slate-400">↕</span></div>
+              </th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="candidateTableBody" class="divide-y divide-slate-100">
+            <!-- Dynamic rows inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden py-12 flex flex-col items-center justify-center text-center">
+        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+          <i data-lucide="user-x" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-700">No candidates found</h3>
+        <p class="text-xs text-slate-500 mt-1">Try adjusting your filters or search keywords.</p>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div class="text-xs text-slate-500" id="paginationInfo">
+          Page 1 of 1
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="prevBtn" onclick="changePage(-1)" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Previous
+          </button>
+          <button id="nextBtn" onclick="changePage(1)" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            Next
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CREATE / EDIT MODAL -->
+  <div id="candidateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-2xl w-full overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Add New Candidate</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 rounded-lg p-1 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form Error Container -->
+      <div id="modalErrors" class="hidden mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 space-y-1"></div>
+
+      <form id="candidateForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="candidateId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">First Name *</label>
+            <input type="text" id="formFirstName" required maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Last Name *</label>
+            <input type="text" id="formLastName" required maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Email *</label>
+            <input type="email" id="formEmail" required maxlength="150" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Phone</label>
+            <input type="text" id="formPhone" placeholder="+1-555-0199" maxlength="20" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Experience (Years) *</label>
+            <input type="number" step="0.1" id="formExperience" required min="0" max="99" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Location</label>
+            <input type="text" id="formLocation" maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Company</label>
+            <input type="text" id="formCompany" maxlength="150" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Expected Salary</label>
+            <input type="number" step="0.01" id="formSalary" min="0" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Notice Period (Days)</label>
+            <input type="number" id="formNotice" min="0" max="365" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Status *</label>
+            <select id="formStatus" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="IN_PROGRESS">IN_PROGRESS</option>
+              <option value="HIRED">HIRED</option>
+              <option value="ON_HOLD">ON_HOLD</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+            Cancel
+          </button>
+          <button type="submit" id="saveBtn" class="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition">
+            Save Candidate
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden max-w-sm w-full bg-white border border-slate-200 rounded-xl shadow-lg p-4 flex items-center space-x-3 transition-all">
+    <div id="toastIcon" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"></div>
+    <div class="flex-1">
+      <p id="toastMessage" class="text-sm font-medium text-slate-800"></p>
+    </div>
+  </div>
+
+  <!-- FRONTEND SCRIPT -->
+  <script>
+    // State management
+    let state = {
+      page: 0,
+      size: 10,
+      sortBy: 'id',
+      direction: 'desc',
+      totalPages: 0,
+      totalElements: 0
+    };
+
+    const API_BASE = '/api/candidates';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchCandidates();
+      lucide.createIcons();
+
+      // Enter key trigger on search
+      document.getElementById('filterSearch').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') applyFilters();
+      });
+    });
+
+    // Fetch Candidates from Spring Boot API
+    async function fetchCandidates() {
+      const params = new URLSearchParams();
+      params.append('page', state.page);
+      params.append('size', state.size);
+      params.append('sortBy', state.sortBy);
+      params.append('direction', state.direction);
+
+      const search = document.getElementById('filterSearch').value.trim();
+      const status = document.getElementById('filterStatus').value;
+      const location = document.getElementById('filterLocation').value.trim();
+      const notice = document.getElementById('filterNotice').value;
+      const minExp = document.getElementById('filterMinExp').value;
+      const maxExp = document.getElementById('filterMaxExp').value;
+      const minSalary = document.getElementById('filterMinSalary').value;
+      const maxSalary = document.getElementById('filterMaxSalary').value;
+
+      if (search) params.append('search', search);
+      if (status) params.append('status', status);
+      if (location) params.append('location', location);
+      if (notice) params.append('maxNoticePeriod', notice);
+      if (minExp) params.append('minExperience', minExp);
+      if (maxExp) params.append('maxExperience', maxExp);
+      if (minSalary) params.append('minSalary', minSalary);
+      if (maxSalary) params.append('maxSalary', maxSalary);
+
+      try {
+        const res = await fetch(`${API_BASE}?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to load candidates');
+        const data = await res.json();
+        
+        state.totalPages = data.totalPages;
+        state.totalElements = data.totalElements;
+        renderTable(data.content);
+        updatePagination();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Render Table Rows
+    function renderTable(candidates) {
+      const tbody = document.getElementById('candidateTableBody');
+      const emptyState = document.getElementById('emptyState');
+      tbody.innerHTML = '';
+
+      document.getElementById('candidateCount').textContent = state.totalElements;
+
+      if (!candidates || candidates.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      candidates.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">#${c.id}</td>
+          <td class="px-4 py-3 font-medium text-slate-900">${c.firstName} ${c.lastName}</td>
+          <td class="px-4 py-3 text-xs">
+            <div class="text-slate-800 font-medium">${c.email}</div>
+            <div class="text-slate-400">${c.phone || '-'}</div>
+          </td>
+          <td class="px-4 py-3 font-medium">${c.experience != null ? c.experience + ' yrs' : '-'}</td>
+          <td class="px-4 py-3 text-slate-600">${c.location || '-'}</td>
+          <td class="px-4 py-3 text-slate-600">${c.currentCompany || '-'}</td>
+          <td class="px-4 py-3 font-medium text-slate-900">${c.expectedSalary != null ? '₹' + Number(c.expectedSalary).toLocaleString() : '-'}</td>
+          <td class="px-4 py-3 text-xs text-slate-600">${c.noticePeriod != null ? c.noticePeriod + ' days' : '-'}</td>
+          <td class="px-4 py-3">
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full badge-${c.status}">${c.status}</span>
+          </td>
+          <td class="px-4 py-3 text-right space-x-1">
+            <button onclick="openEditModal(${c.id})" class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deleteCandidate(${c.id})" class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Sorting
+    function toggleSort(field) {
+      if (state.sortBy === field) {
+        state.direction = state.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortBy = field;
+        state.direction = 'asc';
+      }
+      updateSortIcons();
+      fetchCandidates();
+    }
+
+    function updateSortIcons() {
+      ['id', 'firstName', 'experience', 'location', 'expectedSalary', 'noticePeriod', 'status'].forEach(f => {
+        const el = document.getElementById(`sort-${f}`);
+        if (!el) return;
+        if (state.sortBy === f) {
+          el.textContent = state.direction === 'asc' ? '▲' : '▼';
+          el.className = 'text-blue-600 font-bold';
+        } else {
+          el.textContent = '↕';
+          el.className = 'text-slate-400';
+        }
+      });
+    }
+
+    // Pagination
+    function updatePagination() {
+      document.getElementById('prevBtn').disabled = state.page === 0;
+      document.getElementById('nextBtn').disabled = state.page >= state.totalPages - 1 || state.totalPages === 0;
+      document.getElementById('paginationInfo').textContent = 
+        state.totalPages > 0 ? `Page ${state.page + 1} of ${state.totalPages}` : 'Page 0 of 0';
+    }
+
+    function changePage(delta) {
+      state.page += delta;
+      fetchCandidates();
+    }
+
+    function changePageSize() {
+      state.size = parseInt(document.getElementById('pageSize').value);
+      state.page = 0;
+      fetchCandidates();
+    }
+
+    function applyFilters() {
+      state.page = 0;
+      fetchCandidates();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterLocation').value = '';
+      document.getElementById('filterNotice').value = '';
+      document.getElementById('filterMinExp').value = '';
+      document.getElementById('filterMaxExp').value = '';
+      document.getElementById('filterMinSalary').value = '';
+      document.getElementById('filterMaxSalary').value = '';
+      state.page = 0;
+      state.sortBy = 'id';
+      state.direction = 'desc';
+      updateSortIcons();
+      fetchCandidates();
+    }
+
+    // Modal Operations
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Add New Candidate';
+      document.getElementById('candidateForm').reset();
+      document.getElementById('candidateId').value = '';
+      document.getElementById('modalErrors').classList.add('hidden');
+      document.getElementById('candidateModal').classList.remove('hidden');
+    }
+
+    async function openEditModal(id) {
+      try {
+        const res = await fetch(`${API_BASE}/${id}`);
+        if (!res.ok) throw new Error('Failed to fetch candidate details');
+        const c = await res.json();
+
+        document.getElementById('modalTitle').textContent = 'Edit Candidate';
+        document.getElementById('candidateId').value = c.id;
+        document.getElementById('formFirstName').value = c.firstName || '';
+        document.getElementById('formLastName').value = c.lastName || '';
+        document.getElementById('formEmail').value = c.email || '';
+        document.getElementById('formPhone').value = c.phone || '';
+        document.getElementById('formExperience').value = c.experience ?? '';
+        document.getElementById('formLocation').value = c.location || '';
+        document.getElementById('formCompany').value = c.currentCompany || '';
+        document.getElementById('formSalary').value = c.expectedSalary ?? '';
+        document.getElementById('formNotice').value = c.noticePeriod ?? '';
+        document.getElementById('formStatus').value = c.status || 'AVAILABLE';
+
+        document.getElementById('modalErrors').classList.add('hidden');
+        document.getElementById('candidateModal').classList.remove('hidden');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('candidateModal').classList.add('hidden');
+    }
+
+    // Save (Create or Update)
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('candidateId').value;
+      const isEdit = !!id;
+
+      const payload = {
+        firstName: document.getElementById('formFirstName').value.trim(),
+        lastName: document.getElementById('formLastName').value.trim(),
+        email: document.getElementById('formEmail').value.trim(),
+        phone: document.getElementById('formPhone').value.trim() || null,
+        experience: parseFloat(document.getElementById('formExperience').value),
+        location: document.getElementById('formLocation').value.trim() || null,
+        currentCompany: document.getElementById('formCompany').value.trim() || null,
+        expectedSalary: document.getElementById('formSalary').value ? parseFloat(document.getElementById('formSalary').value) : null,
+        noticePeriod: document.getElementById('formNotice').value ? parseInt(document.getElementById('formNotice').value) : null,
+        status: document.getElementById('formStatus').value
+      };
+
+      const url = isEdit ? `${API_BASE}/${id}` : API_BASE;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          // Display validation errors
+          const errDiv = document.getElementById('modalErrors');
+          errDiv.innerHTML = '';
+          if (data.validationErrors) {
+            Object.entries(data.validationErrors).forEach(([field, msg]) => {
+              const p = document.createElement('p');
+              p.textContent = `• ${field}: ${msg}`;
+              errDiv.appendChild(p);
+            });
+          } else {
+            errDiv.textContent = data.message || 'Operation failed';
+          }
+          errDiv.classList.remove('hidden');
+          return;
+        }
+
+        closeModal();
+        showToast(isEdit ? 'Candidate updated successfully' : 'Candidate created successfully', 'success');
+        fetchCandidates();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Delete
+    async function deleteCandidate(id) {
+      if (!confirm(`Are you sure you want to delete candidate #${id}?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete candidate');
+        showToast(`Candidate #${id} deleted successfully`, 'success');
+        fetchCandidates();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Toast
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+      if (type === 'success') {
+        toastIcon.className = 'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600';
+        toastIcon.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+      } else {
+        toastIcon.className = 'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 text-red-600';
+        toastIcon.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4"></i>';
+      }
+
+      toast.classList.remove('hidden');
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
