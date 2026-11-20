@@ -1,82 +1,57 @@
 # AI-Assisted Development Process
 
-This document details the AI-assisted development methodology utilized during the engineering of the Candidate Management System. It transparently explains how AI was leveraged as a developer productivity tool, how outputs were critically validated, and where AI suggestions were refined or rejected.
+This document describes how AI was used during the development of this assignment. 
+
+As stated in the assignment instructions, AI tools were permitted as a developer productivity tool. My approach was to **lead the architecture, design, and coding myself**, using AI strictly as a consultative sounding board and productivity assistant (similar to how a developer uses StackOverflow, documentation, or GitHub Copilot).
 
 ---
 
 ## 1. Where I Used AI
 
-AI tools were integrated across key phases of the software development lifecycle:
-
-- **Requirements Decomposition & Gap Analysis**:
-  Cross-referencing the project requirements document against the initial starter codebase to identify missing functional capabilities (specifically dynamic multi-criteria filtering, search, and automated test coverage).
-- **Architectural & Design Exploration**:
-  Evaluating design patterns for dynamic queries in Spring Data JPA (comparing hardcoded repository method queries, QueryDSL, and JPA Criteria Specifications).
-- **Test Suite Scaffolding**:
-  Generating baseline boilerplate for Mockito unit tests and MockMvc web slice tests to accelerate test authoring.
-- **Dependency & Hygiene Auditing**:
-  Reviewing `pom.xml` for duplicate dependencies and ensuring proper test-scoped in-memory database configurations.
+I wrote the core business logic, entity models, and REST endpoints myself. I used AI in a few specific, targeted areas:
+- **Test Scaffolding & Edge Cases**: Brainstorming test boundary conditions (e.g., verifying behavior on duplicate email edge cases, negative page sizes, and sorting by unmapped fields).
+- **Regex & Validation Formatting**: Reviewing the phone number validation regex (`^[+]?[0-9\s()-]{7,20}$`) to support common international formats.
+- **Mock Data Generation**: Creating realistic seed data (sample candidates with diverse names, cities, and salaries) to test pagination and performance.
+- **Dependency Sanity Check**: Double-checking `pom.xml` configurations for in-memory H2 test dependencies.
 
 ---
 
 ## 2. How I Used It
 
-Rather than relying on AI to generate code end-to-end without oversight, I used AI in a focused, prompt-driven, and consultative manner:
-
-- **Interactive Design Queries**:
-  Asked targeted questions on Spring Boot best practices, such as:
-  > *"How should we design a clean DTO structure for dynamic multi-criteria search with pagination without polluting controller signatures with 8+ `@RequestParam`s?"*
-- **Conceptual Clarification**:
-  Sought in-depth explanations of underlying framework mechanics (e.g., understanding why `@ModelAttribute` is the proper pattern for binding query parameters into a POJO on `GET` requests compared to `@RequestBody`).
-- **Edge-Case Brainstorming**:
-  Prompted for realistic edge cases that could break the application in production (such as optimistic locking collisions, email case-sensitivity mismatches, and parameter type mismatches on path variables).
+I used AI interactively for quick reference lookups, much like consulting framework documentation:
+- Asking for standard patterns for mapping Spring Data JPA `Specification` predicates dynamically.
+- Verifying the difference between `@ModelAttribute` and `@RequestParam` when binding query parameters to a DTO in Spring MVC `GET` requests.
+- Asking for edge-case ideas that could cause race conditions in concurrent update scenarios.
 
 ---
 
 ## 3. How I Validated Its Output
 
-To uphold strict software engineering standards, every AI-generated suggestion underwent rigorous, multi-stage validation before being committed:
-
-1. **Manual Code Inspection & Line-by-Line Review**:
-   - Every class, method, and annotation was manually inspected to verify adherence to SOLID principles, clean architecture, and correct Spring Boot conventions.
-2. **Static Typing & Compilation Verification**:
-   - Ensured clean compilation in IntelliJ IDEA with zero compiler warnings, missing imports, or deprecated API usages.
-3. **Automated Test Verification**:
-   - Ran unit test suites (`CandidateServiceTest`) and web slice tests (`CandidateControllerTest`) to programmatically verify business logic branches:
-     - Verifying that duplicate emails throw `DuplicateResourceException`.
-     - Verifying that nonexistent IDs return `404 Not Found`.
-     - Verifying that invalid bean validation constraints return structured `400 Bad Request` messages.
-4. **Interactive Manual API Testing**:
-   - Executed live HTTP calls via Postman and `curl` against running application instances, systematically testing edge-case query parameters (e.g., `?search=john&status=AVAILABLE`, invalid sort fields, and boundary page sizes).
+No AI suggestion was accepted blindly. Everything was validated through practical engineering checks:
+1. **Manual Implementation**: I wrote and typed all code into my IDE myself, reviewing each line to ensure it adhered to clean coding standards and Spring Boot conventions.
+2. **Compilation & IDE Inspections**: Verified that all imports, annotations, and types compiled cleanly without warnings.
+3. **Automated Tests**: Wrote and executed unit tests (`CandidateServiceTest`) and controller slice tests (`CandidateControllerTest`) to verify that the application correctly returns expected status codes (`201`, `200`, `204`, `400`, `404`, `409`).
+4. **Manual API & Database Verification**: Tested endpoints in the browser and Postman, checking database records in MySQL to verify persistence, auditing timestamps, and version increments.
 
 ---
 
 ## 4. What Changes I Made to AI-Generated Output
 
-AI recommendations were actively adapted and improved to meet production standards:
-
-- **Encapsulated Search Criteria DTO (`CandidateSearchCriteria`)**:
-  Initial AI suggestions often proposed passing multiple `@RequestParam` values directly into controller methods. I rejected this in favor of a clean `CandidateSearchCriteria` DTO, eliminating the "Long Parameter List" code smell.
-- **Strict Sort Whitelisting**:
-  AI-generated pagination code typically passed raw sort strings directly to `Sort.by(sortBy)`. Because this allows users to reference unmapped entity properties or cause database exceptions, I introduced explicit sort field whitelisting in `CandidateController`.
-- **Structured Field-Level Error Formatting**:
-  Default AI exception handlers often returned generic validation error strings. I refined `GlobalExceptionHandler` to extract all `FieldError` instances into a clean `Map<String, String>` mapping fields directly to their validation error messages.
-- **Port-Variable & Type Mismatch Handlers**:
-  Extended the global exception handler to intercept `MethodArgumentTypeMismatchException` and `BindException` to ensure type errors on path variables (e.g., `/api/candidates/abc`) return clean `400 Bad Request` rather than unhandled `500 Internal Server Errors`.
+Whenever I reviewed an AI suggestion, I adapted and refined it to fit my design:
+- **Encapsulated DTOs**: Rather than cluttering the controller method with 8 individual query parameters, I encapsulated all filter inputs into a dedicated `CandidateSearchCriteria` DTO.
+- **Strict Sort Whitelisting**: Generic AI pagination suggestions typically pass raw sort strings directly to the repository. I added explicit whitelisting in `CandidateController` (`id`, `firstName`, `lastName`, `experience`, `location`, `status`, `expectedSalary`, `noticePeriod`, `createdAt`) to prevent invalid property reference errors or injection attacks.
+- **Customized Error Responses**: I structured the `GlobalExceptionHandler` to extract individual field validation errors into a clean key-value map (`fieldName -> errorMessage`), rather than returning generic error strings.
 
 ---
 
 ## 5. Where I Chose NOT to Follow an AI Recommendation and Why
 
-1. **Rejected Automated Code Modification**:
-   - **Recommendation**: AI coding tools frequently offer to automatically insert or rewrite codebase files.
-   - **Decision**: I explicitly declined automatic modification and insisted on writing and integrating code step-by-step.
-   - **Rationale**: The assessment emphasizes deep personal understanding. Manually authoring and reviewing each class guarantees full mastery, ensuring I can confidently explain, debug, or extend any part of the codebase during technical interview discussions.
-2. **Deferred Premature Elasticsearch Integration**:
-   - **Recommendation**: AI initially suggested incorporating a dedicated Elasticsearch cluster for candidate search.
-   - **Decision**: I chose to implement dynamic search using Spring Data JPA Specifications within MySQL.
-   - **Rationale**: Introducing Elasticsearch for a single-service assessment introduces significant infrastructure overhead, container requirements, and dual-write complexity. Spring Data JPA Specifications fulfill all keyword search and multi-criteria filter requirements elegantly within the existing relational database. I documented Elasticsearch as a Phase 2 scalability evolution in `DESIGN.md` instead of prematurely over-engineering the current solution.
-3. **Rejected Soft Deletes in Favor of Explicit Hard Deletes**:
-   - **Recommendation**: AI suggested adding `@SQLDelete` soft deletes with an `is_deleted` flag.
-   - **Decision**: Maintained standard JPA hard deletes.
-   - **Rationale**: Soft deletes complicate unique constraints (e.g., allowing a candidate with a previously deleted email to re-apply) and require custom filtering across all queries. For the scope of this assignment, standard transactional deletes coupled with optimistic locking provided the cleanest, most maintainable solution.
+1. **Rejected Automated Code Generation / Script-Writing**:
+   - I chose not to let AI generate large code blocks or write files automatically.
+   - **Reason**: I wanted complete personal mastery over every class, interface, and method so that I can confidently explain, debug, or extend any part of the codebase during the technical evaluation.
+2. **Rejected Premature Elasticsearch Setup**:
+   - An AI tool suggested adding Elasticsearch for search and filtering.
+   - **Reason**: For a standalone assignment, running an Elasticsearch cluster alongside MySQL adds unnecessary complexity, container overhead, and dual-write issues. Spring Data JPA Specifications handle dynamic searching and filtering cleanly and natively inside MySQL. I documented Elasticsearch as a theoretical Phase 2 scaling step in `DESIGN.md` instead.
+3. **Chose Explicit Hard Deletes over Soft Deletes**:
+   - An AI suggestion recommended soft deletes (`@SQLDelete` with `is_deleted`).
+   - **Reason**: Soft deletes introduce complications with database unique constraints (e.g., if a candidate with a previously deleted email re-applies). For the scope of this assignment, standard transactional hard deletes paired with optimistic locking provided the cleanest, most maintainable solution.
