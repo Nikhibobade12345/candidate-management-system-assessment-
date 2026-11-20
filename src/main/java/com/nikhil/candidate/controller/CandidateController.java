@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/candidates")
+@CrossOrigin(origins = "*")
 public class CandidateController {
 
     private final CandidateInterface candidateInterface;

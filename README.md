@@ -82,6 +82,24 @@ The application will start on: `http://localhost:5001`
 
 ---
 
+## 🖥️ Interactive Web Testing Dashboard
+
+For fast and convenient evaluation, the application includes an embedded, modern **Web Dashboard** served directly by Spring Boot with **zero extra setup**:
+
+👉 Open in your browser: **`http://localhost:5001/`** (or `http://localhost:5001/index.html`)
+
+### What you can test in the Web UI:
+- **Universal Search**: Type any candidate name, email, or company. Select **📍 Location** in the category dropdown to search by city (e.g., *Pune*, *Bangalore*).
+- **Multi-Criteria Filtering**: Click **"More Filters"** to filter candidates by pipeline status, experience range, salary limits, and max notice period.
+- **Full Candidate Lifecycle (CRUD)**:
+  - Click **"+ Add Candidate"** to test creation and see real-time backend validation error messages.
+  - Click the **Edit** icon on any row to update details.
+  - Click the **Delete** icon to test safe removal.
+- **Dynamic Column Sorting & Pagination**: Click any column header (`ID`, `Name`, `Exp`, `Location`, `Salary`, `Notice`, `Status`) to sort ascending/descending, and adjust page sizes (5, 10, 25, 50).
+- **Sample Seed Data**: To test with 1,000 realistic candidates, execute the included `seed-1000-candidates.sql` script in MySQL!
+
+---
+
 ## 🧪 How to Run Automated Tests
 
 The test suite uses an in-memory **H2 database**, meaning **MySQL does NOT need to be running** to execute tests.

@@ -16,7 +16,7 @@ The architecture emphasizes four core software engineering principles:
 The application adopts a **3-tier Layered Architecture** with unidirectional data flow:
 
 ```
-[ HTTP Clients / Postman / Frontend ]
+[ Web Dashboard (index.html) / HTTP Clients / Postman ]
                  │
                  ▼
      ┌───────────────────────┐
@@ -229,7 +229,3 @@ As the platform scales to **millions of candidate records** and **thousands of c
   - Sending status-change email notifications to candidates.
   - Resume parsing and metadata extraction.
   - Audit logging and recruitment activity streams.
-
-### Step 5: Containerization & Cloud Orchestration
-- Package the Spring Boot service into lightweight Docker containers.
-- Deploy onto **Kubernetes (K8s)** with Horizontal Pod Autoscaling (HPA) configured based on CPU utilization and incoming HTTP request rates.
